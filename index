@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MT3 — Maintenance Manpower &amp; Workload System</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6fa; --panel:#ffffff; --panel2:#f0f3f8; --line:#d6dde8;
+  --txt:#1b2431; --mut:#5d6b80; --acc:#1f6feb; --ok:#1a7f37; --warn:#9a6700;
+  --bad:#cf222e; --info:#0969da; --gold:#b8860b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun','Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--txt);font-size:15px;line-height:1.55}
+/* ===== LOGIN OVERLAY ===== */
+#login-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e9eff8 0%,#f7f9fc 60%,#eaf1fb 100%);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:14px;padding:34px 30px 26px;width:100%;max-width:420px;text-align:center;box-shadow:0 10px 30px rgba(27,36,49,.12)}
+.login-logo{width:150px;height:150px;object-fit:contain;display:block;margin:0 auto 16px;background:#fdfbf3;border:3px solid var(--gold);border-radius:50%;padding:10px;box-shadow:0 0 0 6px rgba(184,134,11,.08),0 8px 26px rgba(184,134,11,.22);animation:logoIn .6s ease}
+@keyframes logoIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.login-card h2{font-size:21px;color:#8a6508;margin-bottom:5px;letter-spacing:2px;font-weight:700}
+.login-card p{font-size:13px;color:var(--mut);margin-bottom:20px}
+.login-form{text-align:left;display:grid;gap:12px;margin-bottom:14px}
+.login-form label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px}
+.login-form input{width:100%;background:#fbfcfe;border:1px solid var(--line);color:var(--txt);padding:10px;border-radius:6px;font-size:15px;font-family:inherit}
+.login-form input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.12)}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:62px}
+.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--mut);font-size:12px;cursor:pointer;padding:4px 6px}
+.login-btn{width:100%;background:linear-gradient(135deg,#2f81f7,#1f5fe0);color:#fff;border:none;padding:11px;border-radius:6px;font-weight:600;cursor:pointer;font-size:15px;font-family:inherit}
+.login-btn:hover{filter:brightness(1.07)}
+.login-err{min-height:16px;font-size:13px;color:var(--bad);margin-bottom:6px}
+.login-err.ok{color:var(--ok)}
+.login-hint{font-size:12px;color:var(--mut);margin-top:6px}
+/* ===== APP MAIN ===== */
+#app{display:none}
+header{background:linear-gradient(90deg,#ffffff,#eef4fd);border-bottom:2px solid var(--acc);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;box-shadow:0 1px 6px rgba(27,36,49,.07)}
+.hdr-brand{display:flex;align-items:center;gap:12px}
+.hdr-brand img{width:58px;height:58px;object-fit:contain;border-radius:10px;background:#fdfbf3;padding:4px;border:2px solid var(--gold);box-shadow:0 0 10px rgba(184,134,11,.22)}
+h1{font-size:19px;letter-spacing:.3px;font-weight:700}
+h1 small{display:block;font-size:12px;color:var(--mut);font-weight:400;letter-spacing:.6px}
+.btnbar{display:flex;gap:8px;flex-wrap:wrap}
+button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:14px;font-family:inherit}
+button:hover{border-color:var(--acc);background:#e7effb}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+button.p:hover{background:#1a5fd0}
+button.d{border-color:#f1b7bb;color:#b4232e;background:#fdf2f3}
+button.d:hover{background:#fbe3e5;border-color:var(--bad)}
+.wrap{padding:16px 20px 60px;max-width:1500px;margin:0 auto}
+.grid{display:grid;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(27,36,49,.05)}
+.card h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--info);margin-bottom:10px;border-bottom:1px solid var(--line);padding-bottom:8px;font-weight:700}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+input,select,textarea{width:100%;background:#fbfcfe;border:1px solid var(--line);color:var(--txt);padding:7px 9px;border-radius:5px;font-size:14px;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(31,111,235,.10)}
+input[type=number]{text-align:right}
+input[readonly]{background:#eef2f7;color:#0b5ed7;font-weight:600}
+.f4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:8px;padding:11px 13px}
+.kpi .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.kpi .v{font-size:24px;font-weight:700;margin-top:3px}
+.kpi .u{font-size:12px;color:var(--mut);font-weight:400}
+.kpi.ok{border-left-color:var(--ok)} .kpi.warn{border-left-color:var(--warn)}
+.kpi.bad{border-left-color:var(--bad)} .kpi.info{border-left-color:var(--info)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:#eef2f8;color:#3d4c60;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;padding:8px 6px;border:1px solid var(--line);text-align:center;font-weight:700}
+td{border:1px solid var(--line);padding:3px 5px}
+tbody tr:nth-child(even) td{background:#fafbfd}
+td input,td select{border:1px solid transparent;background:transparent;padding:5px}
+td input:focus,td select:focus{background:#fff;border-color:var(--acc)}
+td.calc{text-align:right;color:#0b5ed7;font-variant-numeric:tabular-nums;padding-right:8px;background:#f2f6fc;font-weight:600}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+.tabs div{padding:10px 17px;cursor:pointer;color:var(--mut);border-bottom:2px solid transparent;font-size:14px}
+.tabs div:hover{color:var(--txt);background:#eef2f8}
+.tabs div.on{color:var(--acc);border-bottom-color:var(--acc);background:var(--panel);font-weight:600}
+.tab{display:none} .tab.on{display:block}
+.bar{height:28px;background:#eef2f8;border:1px solid var(--line);border-radius:5px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;transition:.3s}
+.bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1b2431}
+.stack{display:flex;height:24px;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.stack i{display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700}
+.lg{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--mut)}
+.lg b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.msg{padding:9px 12px;border-radius:6px;margin-bottom:7px;font-size:13.5px;border-left:3px solid}
+.msg.e{background:#fdf2f3;border-left-color:var(--bad);color:#a3202a}
+.msg.w{background:#fdf7e6;border-left-color:var(--warn);color:#7a5200}
+.msg.g{background:#eef9f1;border-left-color:var(--ok);color:#15632c}
+code{background:#eef2f8;padding:2px 6px;border-radius:4px;color:#0b5ed7;font-size:13px}
+.eq{background:#f7f9fc;border:1px solid var(--line);border-left:3px solid var(--acc);padding:10px 13px;border-radius:6px;margin-bottom:9px;font-family:Consolas,'Courier New',monospace;font-size:13.5px;line-height:1.75}
+.eq b{color:var(--info);font-family:'Sarabun','Segoe UI',sans-serif}
+.note{font-size:12.5px;color:var(--mut);margin-top:6px;line-height:1.65}
+.scroll{overflow-x:auto}
+/* ---- area switcher ---- */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:7px;background:#f7f9fc;border:1px solid var(--line);padding:7px 15px;border-radius:20px;cursor:pointer;font-size:13.5px;user-select:none}
+.chip:hover{border-color:var(--acc);background:#eef4fd}
+.chip.on{background:#e3edfd;border-color:var(--acc);color:#0b4f9e;font-weight:700;box-shadow:0 0 0 1px var(--acc) inset}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:#b6c2d4}
+.chip.on .dot{background:#1f6feb;box-shadow:0 0 6px rgba(31,111,235,.6)}
+.chip .n{font-size:11px;color:var(--mut)}
+.chip.on .n{color:#2f6cbf}
+.addarea{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.addarea input{max-width:200px}
+.abadge{display:inline-block;background:#e3edfd;border:1px solid var(--acc);color:#0b4f9e;padding:3px 12px;border-radius:14px;font-size:12.5px;font-weight:700;letter-spacing:.3px}
+/* ---- people chips ---- */
+.pchip{display:inline-flex;align-items:center;gap:6px;background:#eef9f1;border:1px solid #9bd4ab;color:#15632c;padding:5px 12px;border-radius:20px;font-size:13px;margin:4px 4px 0 0}
+.pchip.lv{background:#fdf2f3;border-color:#f1b7bb;color:#a3202a}
+.pchip.ot{background:#fdf7e6;border-color:#e8ce84;color:#7a5200}
+.pchip .t{font-size:11px;opacity:.85;border-left:1px solid currentColor;padding-left:6px}
+.rosterbox{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+tr.cur td{background:#e3edfd!important}
+tr.clk{cursor:pointer} tr.clk:hover td{background:#eef4fd}
+/* ---- cloud (firebase) ---- */
+.cloudbox{background:#f7f9fc;border:1px solid var(--line);border-left:4px solid #ff8f00;border-radius:8px;padding:12px 14px;margin-bottom:14px}
+.cloudbox h3{font-size:13px;color:#b36b00;letter-spacing:.5px;margin-bottom:8px;font-weight:700}
+.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#b6c2d4;margin-right:6px;vertical-align:middle}
+.cdot.on{background:#1a7f37;box-shadow:0 0 6px rgba(26,127,55,.55)}
+.cdot.er{background:#cf222e;box-shadow:0 0 6px rgba(207,34,46,.5)}
+.cdot.wk{background:#bf8700}
+.ctag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--mut);margin-left:6px}
+.ctag.cloud{background:#eef9f1;border-color:#9bd4ab;color:#15632c}
+.ctag.local{background:#eef2f8;border-color:#c7d2e2;color:#3d4c60}
+@media(max-width:900px){.rosterbox{grid-template-columns:1fr}}
+@media print{header .btnbar,.tabs,button{display:none}body{background:#fff;color:#000}.card{border:1px solid #999;box-shadow:none}.tab{display:block!important}}
+</style>
+</head>
+<body>
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen">
+  <div class="login-card">
+    <img id="logo-login" class="login-logo" alt="Company Logo">
+    <h2>MT3 SYSTEM LOGIN</h2>
+    <p>Maintenance Manpower &amp; Workload Management</p>
+    <div class="login-form">
+      <div>
+        <label>Username</label>
+        <input type="text" id="lg_user" placeholder="Username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div>
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="lg_pass" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button type="button" class="pw-toggle" id="pw_eye" onclick="togglePw()">แสดง</button>
+        </div>
+      </div>
+      <button class="login-btn" onclick="doLogin()">เข้าสู่ระบบ (Login)</button>
+    </div>
+    <div class="login-err" id="lg_msg"></div>
+    <div class="login-hint">🔒 Authorized Personnel Only · Engineering Rev. 5.0</div>
+    <div class="login-hint"><a href="#" onclick="pickLogo();return false" style="color:var(--mut)">เปลี่ยนโลโก้บริษัท</a></div>
+    <input type="file" id="logo_file" accept="image/*" style="display:none" onchange="onLogoPick(event)">
+  </div>
+</div>
+<!-- ===== MAIN APP ===== -->
+<div id="app">
+<header>
+  <div class="hdr-brand">
+    <img id="logo-header" alt="Company Logo">
+    <h1>MT3 · MAINTENANCE MANPOWER &amp; WORKLOAD SYSTEM
+      <small>Area-Segregated Workspace · Capacity · Efficiency · Reliability — Engineering Rev. 5.0</small></h1>
+  </div>
+  <div class="btnbar">
+    <span id="cloud_badge" class="ctag local"><span class="cdot"></span>Local</span>
+    <button onclick="save()">💾 บันทึก</button>
+    <button onclick="load()">📂 เรียกคืน</button>
+    <button onclick="expJSON()">⬇ JSON</button>
+    <button onclick="expCSV()">⬇ CSV (ทุกพื้นที่)</button>
+    <button onclick="window.print()">🖨 พิมพ์</button>
+    <button class="d" onclick="doLogout()">🔒 ออกจากระบบ</button>
+  </div>
+</header>
+<datalist id="dl_tech"></datalist>
+<div class="wrap">
+  <!-- ===== AREA SWITCHER ===== -->
+  <div class="card" style="border-left:4px solid var(--acc)">
+    <h2>Working Area — เลือก 1 พื้นที่ (ข้อมูลแยกอิสระต่อพื้นที่)</h2>
+    <div class="chips" id="areas"></div>
+    <div class="addarea">
+      <input id="newarea" placeholder="+ เพิ่มพื้นที่ เช่น Tunnel-W" onkeydown="if(event.key==='Enter')addArea()">
+      <button onclick="addArea()">เพิ่มพื้นที่</button>
+      <button class="d" onclick="delArea()">ลบพื้นที่นี้</button>
+    </div>
+    <div class="note" id="areasel"></div>
+  </div>
+  <!-- ===== HEADER INFO + MANPOWER ===== -->
+  <div class="grid" style="grid-template-columns:1fr 1.25fr;margin-top:14px">
+    <div class="card">
+      <h2>Shift Identification · <span id="bdg1" class="abadge"></span></h2>
+      <div class="f3">
+        <div><label>Date (ใช้ร่วมทุกพื้นที่)</label><input type="date" id="h_date"></div>
+        <div><label>Shift (ใช้ร่วมทุกพื้นที่)</label><select id="h_shift"><option>Day</option><option>Night</option></select></div>
+        <div><label>Supervisor (เฉพาะพื้นที่นี้)</label><input id="h_sup" placeholder="ชื่อหัวหน้ากะ"></div>
+      </div>
+      <div class="note">ทุกตาราง ทุก KPI และรายชื่อช่างด้านล่าง เป็นข้อมูลของพื้นที่ <b id="bdg2"></b> เท่านั้น</div>
+    </div>
+    <div class="card">
+      <h2>Manpower Capacity Input · <span id="bdg3" class="abadge"></span></h2>
+      <div class="f4">
+        <div><label>Head Count, N (คน)</label><input type="number" id="m_n" value="10" min="0" step="1"></div>
+        <div><label>Shift Length, H (ชม./คน)</label><input type="number" id="m_h" value="6" min="0" step="0.25"></div>
+        <div><label>Break/Allowance, B (ชม./คน)</label><input type="number" id="m_b" value="0.5" min="0" step="0.25"></div>
+        <div><label>Availability Factor, η (%)</label><input type="number" id="m_e" value="75" min="1" max="100" step="1"></div>
+      </div>
+      <div class="f3" style="margin-top:10px">
+        <div><label>MH Gross = N×H</label><input id="o_gross" readonly></div>
+        <div><label>MH Productive = N(H−B)</label><input id="o_prod" readonly></div>
+        <div><label>MH Net = N(H−B)·η</label><input id="o_net" readonly></div>
+      </div>
+    </div>
+  </div>
+  <!-- ===== TABS ===== -->
+  <div class="tabs" style="margin-top:16px">
+    <div class="on" data-t="dash">📊 Dashboard</div>
+    <div data-t="team">👥 Team Roster</div>
+    <div data-t="cm">🔧 Corrective (CM)</div>
+    <div data-t="pm">🛠 Preventive (PM)</div>
+    <div data-t="dly">📋 Daily Inspection</div>
+    <div data-t="flt">⚠ Fault Log</div>
+    <div data-t="hist">📅 History (ย้อนหลัง)</div>
+    <div data-t="val">✔ Validation</div>
+    <div data-t="frm">∑ Formulas</div>
+  </div>
+  <!-- DASHBOARD -->
+  <div class="tab on" id="t_dash">
+    <div class="kpis" id="kpis"></div>
+    <div class="card" style="margin-top:14px">
+      <h2>กำลังพลวันนี้ &amp; โอที (Attendance &amp; Overtime) — <span id="bdg4" class="abadge"></span></h2>
+      <div class="rosterbox">
+        <div>
+          <div style="font-size:13px;color:#15632c;font-weight:600">✔ มาทำงาน <span id="cnt_p">0</span> คน</div>
+          <div id="list_p"></div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:#a3202a;font-weight:600">✖ ลา / ไม่มา <span id="cnt_l">0</span> คน</div>
+          <div id="list_l"></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+        <div style="font-size:13px;color:#7a5200;font-weight:600;margin-bottom:6px">⏱ ช่างที่ปฏิบัติงานล่วงเวลา (OT) วันนี้ <span id="cnt_ot">0</span> คน</div>
+        <div id="list_ot"></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="p" onclick="syncN()">⟲ ใช้จำนวนคนที่มาทำงานเป็น N</button>
+        <span class="note" id="nnote" style="margin:0"></span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>สถานะแยกรายพื้นที่ — Area Segregated Status (คลิกแถวเพื่อสลับพื้นที่)</h2>
+      <div class="scroll"><table><thead><tr>
+        <th>พื้นที่</th><th>Supervisor</th><th>มาทำงาน</th><th>ลา</th><th>OT</th><th>N</th>
+        <th>Net MH</th><th>Demand MH</th><th>Balance MH</th><th>Util %</th><th>Gap (คน)</th><th>Status</th>
+      </tr></thead><tbody id="arows"></tbody></table></div>
+      <div class="note">แต่ละแถวคำนวณแยกอิสระจากข้อมูลของพื้นที่นั้นเอง — ไม่มีการรวมยอดข้ามพื้นที่</div>
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:14px">
+      <div class="card">
+        <h2>Capacity Utilisation · <span id="bdg5" class="abadge"></span></h2>
+        <div class="bar"><i id="ub"></i><span id="ut"></span></div>
+        <div class="note" id="unote"></div>
+        <div style="margin-top:14px"><label>Workload Composition (MH)</label>
+          <div class="stack" id="stk"></div>
+          <div class="lg">
+            <span><b style="background:#cf222e"></b>CM</span><span><b style="background:#bf8700"></b>PM</span>
+            <span><b style="background:#1f6feb"></b>Daily</span><span><b style="background:#8250df"></b>Fault</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Balance Sheet (Man-Hour) · <span id="bdg6" class="abadge"></span></h2>
+        <table><tbody id="bal"></tbody></table>
+      </div>
+    </div>
+  </div>
+  <!-- TEAM ROSTER -->
+  <div class="tab" id="t_team">
+    <div class="card"><h2>Team Roster — รายชื่อช่างประจำพื้นที่ <span id="bdg7" class="abadge"></span></h2>
+      <div class="scroll"><table id="tb_team"><thead><tr>
+        <th style="width:38px">#</th><th>ชื่อ-สกุล</th><th style="width:110px">รหัสพนักงาน</th>
+        <th style="width:140px">ตำแหน่ง / สาขา</th><th style="width:120px">สถานะ</th>
+        <th style="width:130px">ประเภทการลา</th><th style="width:90px">OT (ชม.)</th><th>หมายเหตุ</th><th style="width:38px"></th>
+      </tr></thead><tbody></tbody><tfoot id="f_team"></tfoot></table></div>
+      <button class="p" style="margin-top:10px" onclick="addRow('team')">+ เพิ่มช่าง</button>
+      <div class="note">รายชื่อนี้ผูกกับพื้นที่ปัจจุบันเท่านั้น · ช่างที่สถานะ "มาทำงาน" จะไปเป็นตัวเลือกในช่อง <b>ช่างผู้รับผิดชอบ</b> ของแท็บ Preventive และ Daily Inspection ในพื้นที่เดียวกัน</div>
+    </div>
+  </div>
+  <!-- CM -->
+  <div class="tab" id="t_cm">
+    <div class="card"><h2>Corrective Maintenance — Std vs Actual · <span id="bdg8" class="abadge"></span></h2>
+      <div class="scroll"><table id="tb_cm"><thead><tr>
+        <th style="width:38px">#</th><th>Outfit / Equipment</th><th>Spare Part Exchange</th>
+        <th style="width:95px">Source</th><th style="width:60px">Men</th><th style="width:75px">STD (hr)</th>
+        <th style="width:75px">ACT (hr)</th><th style="width:80px">STD MH</th><th style="width:80px">ACT MH</th>
+        <th style="width:80px">Eff %</th><th style="width:85px">Result</th><th>Remark</th><th style="width:38px"></th>
+      </tr></thead><tbody></tbody><tfoot id="f_cm"></tfoot></table></div>
+      <button class="p" style="margin-top:10px" onclick="addRow('cm')">+ เพิ่มแถว</button>
+    </div>
+  </div>
+  <!-- PM -->
+  <div class="tab" id="t_pm">
+    <div class="card"><h2>Preventive Maintenance — Plan vs Achievement · <span id="bdg9" class="abadge"></span></h2>
+      <div style="max-width:210px;margin-bottom:10px"><label>PM Planned (งาน)</label><input type="number" id="pm_plan" value="31" min="0"></div>
+      <div class="scroll"><table id="tb_pm"><thead><tr>
+        <th style="width:38px">#</th><th>Outfit / Equipment</th><th>Task Description</th>
+        <th style="width:170px">ช่างผู้รับผิดชอบ</th>
+        <th style="width:60px">Men</th><th style="width:75px">STD (hr)</th><th style="width:75px">ACT (hr)</th>
+        <th style="width:80px">STD MH</th><th style="width:80px">ACT MH</th><th style="width:80px">Eff %</th>
+        <th style="width:85px">Result</th><th>Remark</th><th style="width:38px"></th>
+      </tr></thead><tbody></tbody><tfoot id="f_pm"></tfoot></table></div>
+      <button class="p" style="margin-top:10px" onclick="addRow('pm')">+ เพิ่มแถว</button>
+      <div class="note">พิมพ์ชื่อช่างแล้วเลือกจากรายการที่เด้งขึ้น · หลายคนให้คั่นด้วยเครื่องหมายจุลภาค เช่น <code>สมชาย, วิชัย</code></div>
+    </div>
+  </div>
+  <!-- DAILY -->
+  <div class="tab" id="t_dly">
+    <div class="card"><h2>Daily Inspection — Normal / Special · <span id="bdg10" class="abadge"></span></h2>
+      <div style="max-width:210px;margin-bottom:10px"><label>Daily Planned (จุดตรวจ)</label><input type="number" id="dl_plan" value="24" min="0"></div>
+      <div class="scroll"><table id="tb_dly"><thead><tr>
+        <th style="width:38px">#</th><th style="width:95px">Type</th><th>Outfit</th><th>Detail</th>
+        <th style="width:70px">Lv.</th><th style="width:170px">ช่างผู้รับผิดชอบ</th>
+        <th style="width:60px">Men</th><th style="width:80px">Dur (hr)</th>
+        <th style="width:80px">MH</th><th style="width:85px">Result</th><th>Remark</th><th style="width:38px"></th>
+      </tr></thead><tbody></tbody><tfoot id="f_dly"></tfoot></table></div>
+      <button class="p" style="margin-top:10px" onclick="addRow('dly')">+ เพิ่มแถว</button>
+      <div class="note">พิมพ์ชื่อช่างแล้วเลือกจากรายการที่เด้งขึ้น · หลายคนให้คั่นด้วยเครื่องหมายจุลภาค</div>
+    </div>
+  </div>
+  <!-- FAULT -->
+  <div class="tab" id="t_flt">
+    <div class="card"><h2>Problem / Fault Log — Downtime &amp; Reliability · <span id="bdg11" class="abadge"></span></h2>
+      <div style="max-width:240px;margin-bottom:10px"><label>Planned Production Time (ชม.)</label><input type="number" id="ppt" value="6" min="0" step="0.25"></div>
+      <div class="scroll"><table id="tb_flt"><thead><tr>
+        <th style="width:38px">#</th><th>Outfit</th><th>Message / Alarm</th><th>Problem (Root Cause)</th><th>Fix / Action</th>
+        <th style="width:80px">T/F Found</th><th style="width:80px">T/S Start</th><th style="width:80px">T/T Finish</th>
+        <th style="width:60px">Men</th><th style="width:75px">Resp (hr)</th><th style="width:75px">Repair (hr)</th>
+        <th style="width:80px">Down (hr)</th><th style="width:70px">MH</th><th style="width:38px"></th>
+      </tr></thead><tbody></tbody><tfoot id="f_flt"></tfoot></table></div>
+      <button class="p" style="margin-top:10px" onclick="addRow('flt')">+ เพิ่มแถว</button>
+      <div class="note">T/F = เวลาที่พบเหตุ · T/S = เวลาที่เริ่มซ่อม · T/T = เวลาที่ซ่อมเสร็จ &nbsp;|&nbsp; รองรับกะข้ามเที่ยงคืนอัตโนมัติ</div>
+    </div>
+  </div>
+  <!-- HISTORY -->
+  <div class="tab" id="t_hist">
+    <div class="card">
+      <h2>History — ประวัติย้อนหลังรายวัน (Daily Archive)</h2>
+      <!-- ===== CLOUD DATABASE (FIREBASE) ===== -->
+      <div class="cloudbox">
+        <h3>☁ Cloud Database — Firebase Firestore</h3>
+        <div style="margin-bottom:9px"><span class="cdot" id="cdot"></span><span id="cloud_st">กำลังเชื่อมต่อ...</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="p" onclick="cloudPush()">⬆ อัปโหลดกะปัจจุบันขึ้นคลาวด์</button>
+          <button onclick="cloudPushAll()">⬆ อัปโหลดประวัติทั้งหมด</button>
+          <button class="p" onclick="cloudPull()">⬇ ดึงข้อมูลจากคลาวด์</button>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);margin:0">
+            <input type="checkbox" id="auto_cloud" style="width:auto" onchange="toggleAuto()"> บันทึกขึ้นคลาวด์อัตโนมัติ
+          </label>
+        </div>
+        <div class="note">ข้อมูลจะถูกเก็บใน Firestore คอลเล็กชัน <code>mt3_history</code> · เครื่องใดก็ได้ที่เปิดระบบนี้แล้วกด "ดึงข้อมูลจากคลาวด์" จะเห็นข้อมูลชุดเดียวกันทันที</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+        <div style="max-width:180px"><label>กรองตามวันที่</label><input type="date" id="hs_date" onchange="renderHist()"></div>
+        <button onclick="clearFilter()">แสดงทั้งหมด</button>
+        <button class="p" onclick="saveSnap()">📅 บันทึกวันนี้เข้าประวัติ</button>
+        <button onclick="expArchive()">⬇ ส่งออกคลังประวัติ (.json)</button>
+        <button onclick="document.getElementById('imp_file').click()">⬆ นำเข้าคลังประวัติ</button>
+        <button onclick="shareLink()">🔗 สร้างลิงก์เปิดเครื่องอื่น</button>
+        <button class="d" onclick="clearHist()">🗑 ล้างประวัติทั้งหมด</button>
+        <input type="file" id="imp_file" accept="application/json,.json" style="display:none" onchange="impArchive(event)">
+      </div>
+      <div class="scroll"><table><thead><tr>
+        <th style="width:110px">วันที่</th><th style="width:70px">กะ</th><th style="width:70px">พื้นที่</th>
+        <th style="width:85px">มาทำงาน</th><th style="width:60px">ลา</th><th style="width:80px">OT (ชม.)</th>
+        <th style="width:90px">Net MH</th><th style="width:95px">Demand MH</th><th style="width:80px">Util %</th>
+        <th>บันทึกเมื่อ</th><th style="width:230px">จัดการ</th>
+      </tr></thead><tbody id="hrows"></tbody></table></div>
+      <div class="note" id="hnote"></div>
+      <div class="note" style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px">
+        <b>วิธีเปิดดูในเครื่องอื่น</b><br>
+        1. <b>แนะนำ — ผ่านคลาวด์:</b> กด <b>อัปโหลดขึ้นคลาวด์</b> ที่เครื่องนี้ → เครื่องปลายทางเปิดระบบแล้วกด <b>ดึงข้อมูลจากคลาวด์</b> ได้เลย ไม่ต้องส่งไฟล์<br>
+        2. กด <b>ส่งออกคลังประวัติ</b> → ได้ไฟล์ <code>MT3_ARCHIVE.json</code> → ส่งไฟล์ให้เครื่องปลายทาง → เปิดระบบที่เครื่องนั้นแล้วกด <b>นำเข้าคลังประวัติ</b> (ข้อมูลเดิมจะถูกรวมเข้าด้วยกัน ไม่ทับกัน)<br>
+        3. หรือกด <b>สร้างลิงก์เปิดเครื่องอื่น</b> → ลิงก์จะถูกคัดลอกให้อัตโนมัติ → ส่งผ่าน LINE/อีเมล → ปลายทางเปิดลิงก์แล้วล็อกอินจะเห็นข้อมูลกะนั้นทันที (เหมาะกับข้อมูลขนาดไม่ใหญ่)
+      </div>
+    </div>
+  </div>
+  <!-- VALIDATION -->
+  <div class="tab" id="t_val">
+    <div class="card"><h2>Data Validation &amp; Engineering Checks · <span id="bdg12" class="abadge"></span></h2><div id="vout"></div></div>
+  </div>
+  <!-- FORMULAS -->
+  <div class="tab" id="t_frm">
+    <div class="card"><h2>Calculation Basis — Units &amp; Equations</h2>
+      <div class="eq"><b>0. Area Segregation</b><br>ทุกสมการคำนวณแยกต่อพื้นที่ a ∈ {Areas} โดยไม่รวมยอดข้ามพื้นที่<br>X(a) = f( ข้อมูลของพื้นที่ a เท่านั้น )</div>
+      <div class="eq"><b>1. Gross Capacity</b><br>MH_gross(a) = N(a) × H(a) &nbsp;[man·hr]</div>
+      <div class="eq"><b>2. Productive Capacity</b> (หักพัก/allowance)<br>MH_prod(a) = N(a) × (H(a) − B(a))</div>
+      <div class="eq"><b>3. Net Available Capacity</b> (แก้จุดที่ไฟล์เดิมขัดกัน)<br>MH_net(a) = N(a) × (H(a) − B(a)) × η(a) &nbsp;, 0 &lt; η ≤ 1</div>
+      <div class="eq"><b>4. Workload Demand</b><br>MH_demand(a) = Σ(CM_act·men) + Σ(PM_act·men) + Σ(Daily·men) + Σ(Repair·men)</div>
+      <div class="eq"><b>5. Utilisation</b><br>U(a) = MH_demand(a) ÷ MH_net(a) × 100 % &nbsp;— ถ้า MH_net = 0 → "—" (ไม่ใช่ #DIV/0!)</div>
+      <div class="eq"><b>6. Capacity Status</b><br>U &lt; 60 % UNDER · 60–85 % NORMAL · 85–100 % TIGHT · &gt; 100 % OVERLOAD</div>
+      <div class="eq"><b>7. Required Manpower</b><br>N_req(a) = ⌈ MH_demand(a) ÷ ((H − B) × η) ⌉ &nbsp;; Gap(a) = N_req(a) − N(a)</div>
+      <div class="eq"><b>8. Task Efficiency</b><br>Eff = MH_std ÷ MH_act × 100 % &nbsp;(&gt;100 % = เร็วกว่ามาตรฐาน)</div>
+      <div class="eq"><b>9. Overall Labour Efficiency</b><br>OLE(a) = ΣMH_std ÷ ΣMH_act × 100 %</div>
+      <div class="eq"><b>10. First-Pass Yield / KPI</b><br>FPY(a) = OK ÷ (OK + NG + Edit) × 100 %</div>
+      <div class="eq"><b>11. Schedule Compliance</b><br>SC(a) = งานที่ปิดได้ ÷ งานที่วางแผน × 100 %</div>
+      <div class="eq"><b>12. MTTA / MTTR</b><br>MTTA(a) = Σ(T/S − T/F) ÷ n &nbsp;; MTTR(a) = Σ(T/T − T/S) ÷ n</div>
+      <div class="eq"><b>13. Area Availability</b><br>A(a) = (PPT(a) − Σ Downtime(a)) ÷ PPT(a) × 100 % &nbsp;, Downtime = T/T − T/F</div>
+      <div class="eq"><b>14. Attendance Rate &amp; OT</b><br>AR(a) = คนมาทำงาน(a) ÷ (คนมาทำงาน(a) + คนลา(a)) × 100 % &nbsp;|&nbsp; Total OT MH = Σ(OT hours)</div>
+      <div class="note">ค่าทั้งหมดคำนวณด้วย double precision แล้วปัดแสดงผล 2 ตำแหน่ง · ทุกการหารผ่าน guard ป้องกัน division-by-zero · ค่าที่กรอกเกินพิสัยจะถูก clamp และแจ้งเตือนในแท็บ Validation</div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+/* ============ LOGIN AUTH + BRAND LOGO (Security Rev.) ============ */
+const AUTH = {
+  user   : 'Affan.m',
+  pass   : '*****',   /* ← แก้เป็นรหัสผ่านจริงตรงนี้บรรทัดเดียว */
+  maxTry : 5,
+  lockMin: 5,
+  idleMin: 30
+};
+const DEFAULT_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#d9a825"/><stop offset="100%" stop-color="#8a6508"/>
+  </linearGradient></defs>
+  <circle cx="100" cy="100" r="92" fill="#fdfbf3" stroke="url(#g)" stroke-width="7"/>
+  <text x="100" y="112" font-family="Segoe UI,Arial" font-size="62" font-weight="700" fill="url(#g)" text-anchor="middle">MT3</text>
+  <text x="100" y="146" font-family="Segoe UI,Arial" font-size="15" letter-spacing="3" fill="#5d6b80" text-anchor="middle">MAINTENANCE</text>
+</svg>`);
+function getLogo(){ try{ return localStorage.getItem('mt3_logo') || DEFAULT_LOGO; }catch(e){ return DEFAULT_LOGO; } }
+function applyLogo(){ const s=getLogo(), a=document.getElementById('logo-login'), b=document.getElementById('logo-header'); if(a)a.src=s; if(b)b.src=s; }
+function pickLogo(){ document.getElementById('logo_file').click(); }
+function onLogoPick(e){
+  const f=e.target.files[0]; if(!f) return;
+  if(f.size>1024*1024){ alert('ไฟล์โลโก้ใหญ่เกิน 1 MB'); return; }
+  const r=new FileReader();
+  r.onload=()=>{ try{ localStorage.setItem('mt3_logo', r.result); }catch(err){} applyLogo(); };
+  r.readAsDataURL(f);
+}
+function lgMsg(t, ok){ const m=document.getElementById('lg_msg'); if(m){ m.textContent=t||''; m.className='login-err'+(ok?' ok':''); } }
+function lockLeft(){ const t=+(localStorage.getItem('mt3_lock')||0); return t>Date.now()?Math.ceil((t-Date.now())/60000):0; }
+function doLogin(){
+  const wait=lockLeft();
+  if(wait){ lgMsg('ระบบถูกล็อกชั่วคราว กรุณารออีก '+wait+' นาที'); return; }
+  const u=document.getElementById('lg_user').value.trim();
+  const p=document.getElementById('lg_pass').value;
+  if(u===AUTH.user && p===AUTH.pass){
+    localStorage.removeItem('mt3_try'); localStorage.removeItem('mt3_lock');
+    sessionStorage.setItem('mt3_session', Date.now());
+    document.getElementById('lg_pass').value=''; lgMsg('');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    startIdleWatch();
+    initApp();
+  } else {
+    const n=(+(localStorage.getItem('mt3_try')||0))+1;
+    localStorage.setItem('mt3_try', n);
+    if(n>=AUTH.maxTry){
+      localStorage.setItem('mt3_lock', Date.now()+AUTH.lockMin*60000);
+      localStorage.setItem('mt3_try', 0);
+      lgMsg('ใส่รหัสผิดเกิน '+AUTH.maxTry+' ครั้ง — ล็อกระบบ '+AUTH.lockMin+' นาที');
+    } else {
+      lgMsg('Username หรือ Password ไม่ถูกต้อง (เหลืออีก '+(AUTH.maxTry-n)+' ครั้ง)');
+    }
+    document.getElementById('lg_pass').value='';
+  }
+}
+function doLogout(silent){
+  if(silent===true || confirm('ต้องการออกจากระบบ?')){
+    sessionStorage.removeItem('mt3_session');
+    document.getElementById('app').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('lg_user').value='';
+    document.getElementById('lg_pass').value='';
+    lgMsg('');
+  }
+}
+function togglePw(){ const i=document.getElementById('lg_pass'), b=document.getElementById('pw_eye'); const s=(i.type==='password'); i.type=s?'text':'password'; b.textContent=s?'ซ่อน':'แสดง'; i.focus(); }
+let _idleT=null;
+function startIdleWatch(){
+  const reset=()=>{ clearTimeout(_idleT); _idleT=setTimeout(()=>{ alert('ไม่มีการใช้งาน '+AUTH.idleMin+' นาที — ออกจากระบบอัตโนมัติ'); doLogout(true); }, AUTH.idleMin*60000); };
+  ['click','keydown','mousemove','touchstart'].forEach(ev=>document.addEventListener(ev, reset, {passive:true}));
+  reset();
+}
+let PENDING_SHARE=null;
+document.addEventListener('DOMContentLoaded', ()=>{
+  applyLogo();
+  if(location.hash.indexOf('#d=')===0){ try{ PENDING_SHARE=JSON.parse(b64dec(location.hash.slice(3))); }catch(e){ PENDING_SHARE=null; } }
+  const w=lockLeft(); if(w) lgMsg('ระบบถูกล็อกชั่วคราว กรุณารออีก '+w+' นาที');
+  else if(PENDING_SHARE) lgMsg('พบข้อมูลที่แชร์มาในลิงก์ — ล็อกอินเพื่อเปิดดู', true);
+  const u=document.getElementById('lg_user'); if(u) u.focus();
+});
+/* ============ UTILITIES ============ */
+const $=id=>document.getElementById(id);
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0;};
+const div=(a,b)=>(b&&isFinite(b)&&b!==0)?a/b:null;
+const fmt=(v,d=2)=>v===null||v===undefined||!isFinite(v)?'—':v.toFixed(d);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const t2h=t=>{if(!t)return null;const[p,q]=t.split(':').map(Number);return p+q/60;};
+const dur=(a,b)=>{const x=t2h(a),y=t2h(b);if(x===null||y===null)return null;let d=y-x;if(d<0)d+=24;return d;};
+const names=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
+function b64enc(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64dec(s){return decodeURIComponent(escape(atob(s)));}
+/* ============ AREA-SEGREGATED DATA MODEL ============ */
+const DEF_AREAS=['SAT-East','Tunnel-E','MTB-East','MTB-West','SAT-West'];
+const AF=['h_sup','m_n','m_h','m_b','m_e','pm_plan','dl_plan','ppt'];
+const GF=['h_date','h_shift'];
+const BLANK={
+  cm:{o:'',p:'',src:'B1',men:1,std:0,act:0,r:'OK',rm:''},
+  pm:{o:'',t:'',who:'',men:1,std:0,act:0,r:'OK',rm:''},
+  dly:{ty:'Normal',o:'',d:'',lv:'A',who:'',men:1,du:0,r:'OK',rm:''},
+  flt:{o:'',msg:'',pb:'',fx:'',tf:'',ts:'',tt:'',men:1},
+  team:{nm:'',id:'',po:'Mechanical',st:'มาทำงาน',lv:'-',ot:0,rm:''}
+};
+const cp=o=>JSON.parse(JSON.stringify(o));
+function newArea(seed){
+  const A={cm:[],pm:[],dly:[],flt:[],team:[],
+    hdr:{h_sup:'',m_n:10,m_h:6,m_b:0.5,m_e:75,pm_plan:31,dl_plan:24,ppt:6}};
+  if(seed){['cm','pm','dly','flt'].forEach(k=>{for(let i=0;i<3;i++)A[k].push(cp(BLANK[k]));});
+    for(let i=0;i<5;i++)A.team.push(cp(BLANK.team));}
+  return A;
+}
+let DB={areas:[...DEF_AREAS],active:DEF_AREAS[0],d:{},g:{}};
+DEF_AREAS.forEach(a=>DB.d[a]=newArea(true));
+let S=DB.d[DB.active];
+function grabHdr(){AF.forEach(k=>S.hdr[k]=$(k).value);}
+function putHdr(){AF.forEach(k=>{if(S.hdr[k]!==undefined)$(k).value=S.hdr[k];});}
+function switchArea(a){
+  if(a===DB.active)return;
+  grabHdr(); DB.active=a; S=DB.d[a]; putHdr(); render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function addArea(){const v=$('newarea').value.trim();if(!v)return;
+  if(DB.areas.includes(v)){alert('มีพื้นที่นี้อยู่แล้ว');return;}
+  grabHdr(); DB.areas.push(v); DB.d[v]=newArea(true);
+  DB.active=v; S=DB.d[v]; putHdr(); $('newarea').value=''; render();}
+function delArea(){
+  if(DB.areas.length<=1){alert('ต้องมีอย่างน้อย 1 พื้นที่');return;}
+  if(!confirm(`ลบพื้นที่ "${DB.active}" พร้อมข้อมูลทั้งหมดของพื้นที่นี้?`))return;
+  delete DB.d[DB.active]; DB.areas=DB.areas.filter(x=>x!==DB.active);
+  DB.active=DB.areas[0]; S=DB.d[DB.active]; putHdr(); render();}
+/* ============ ROW BUILDERS ============ */
+function inp(k,i,f,ty='text',extra=''){const v=S[k][i][f];
+  return `<input ${ty==='number'?'type="number" step="0.25" min="0"':ty==='time'?'type="time"':''} value="${esc(v)}" ${extra} data-k="${k}" data-i="${i}" data-f="${f}">`;}
+function sel(k,i,f,opts){return `<select data-k="${k}" data-i="${i}" data-f="${f}">`+
+  opts.map(o=>`<option ${S[k][i][f]===o?'selected':''}>${o}</option>`).join('')+`</select>`;}
+const del=(k,i)=>`<td style="text-align:center"><button class="d" style="padding:2px 7px" onclick="rm('${k}',${i})">✕</button></td>`;
+function renderAreas(){
+  $('areas').innerHTML=DB.areas.map(a=>{const A=DB.d[a];
+    const p=A.team.filter(t=>t.st==='มาทำงาน'&&t.nm.trim()).length;
+    const ots=A.team.reduce((s,t)=>s+num(t.ot),0);
+    const jobs=A.cm.length+A.pm.length+A.dly.length+A.flt.length;
+    return `<span class="chip ${a===DB.active?'on':''}" onclick="switchArea('${esc(a).replace(/'/g,"\\'")}')">
+      <i class="dot"></i>${esc(a)}<span class="n">${p} คน${ots>0?' (+'+ots+'ชม. OT)':''} · ${jobs} งาน</span></span>`;}).join('');
+  const b=`<b style="color:#0b4f9e">${esc(DB.active)}</b>`;
+  $('areasel').innerHTML=`กำลังทำงานในพื้นที่ ${b} — ข้อมูลทุกแท็บด้านล่างเป็นของพื้นที่นี้เท่านั้น (ทั้งหมด ${DB.areas.length} พื้นที่ แยกจากกันโดยสมบูรณ์)`;
+  for(let i=1;i<=12;i++){const e=$('bdg'+i);if(e)e.textContent=DB.active;}
+  $('bdg2').className='';$('bdg2').style.color='#0b4f9e';
+}
+function render(){
+  // TEAM
+  let h='';S.team.forEach((r,i)=>{
+    h+=`<tr><td style="text-align:center">${i+1}</td><td>${inp('team',i,'nm','text','placeholder="ชื่อ-สกุล"')}</td>
+    <td>${inp('team',i,'id')}</td><td>${sel('team',i,'po',['Mechanical','Electrical','Instrument','Technician','Foreman','Trainee'])}</td>
+    <td>${sel('team',i,'st',['มาทำงาน','ลา'])}</td>
+    <td>${r.st==='ลา'?sel('team',i,'lv',['ลากิจ','ลาป่วย','ลาพักร้อน','ขาดงาน','อบรม','อื่นๆ']):'<span style="color:#5d6b80;padding-left:6px">-</span>'}</td>
+    <td>${inp('team',i,'ot','number')}</td>
+    <td>${inp('team',i,'rm')}</td>${del('team',i)}</tr>`;});
+  $('tb_team').tBodies[0].innerHTML=h||`<tr><td colspan="9" style="text-align:center;color:#5d6b80;padding:14px">ยังไม่มีรายชื่อช่างในพื้นที่ ${esc(DB.active)}</td></tr>`;
+  // CM
+  h='';S.cm.forEach((r,i)=>{const sm=num(r.std)*num(r.men),am=num(r.act)*num(r.men),e=div(sm,am);
+    h+=`<tr><td style="text-align:center">${i+1}</td><td>${inp('cm',i,'o')}</td><td>${inp('cm',i,'p')}</td>
+    <td>${sel('cm',i,'src',['B1','B2','B3','042','N/A'])}</td><td>${inp('cm',i,'men','number')}</td>
+    <td>${inp('cm',i,'std','number')}</td><td>${inp('cm',i,'act','number')}</td>
+    <td class="calc">${fmt(sm)}</td><td class="calc">${fmt(am)}</td>
+    <td class="calc" style="color:${e===null?'#5d6b80':e>=1?'#1a7f37':'#cf222e'}">${e===null?'—':fmt(e*100)}</td>
+    <td>${sel('cm',i,'r',['OK','NG','Edit'])}</td><td>${inp('cm',i,'rm')}</td>${del('cm',i)}</tr>`;});
+  $('tb_cm').tBodies[0].innerHTML=h||`<tr><td colspan="13" style="text-align:center;color:#5d6b80;padding:14px">ยังไม่มีรายการ</td></tr>`;
+  // PM
+  h='';S.pm.forEach((r,i)=>{const sm=num(r.std)*num(r.men),am=num(r.act)*num(r.men),e=div(sm,am);
+    h+=`<tr><td style="text-align:center">${i+1}</td><td>${inp('pm',i,'o')}</td><td>${inp('pm',i,'t')}</td>
+    <td>${inp('pm',i,'who','text','list="dl_tech" placeholder="เลือก/พิมพ์ชื่อช่าง"')}</td>
+    <td>${inp('pm',i,'men','number')}</td><td>${inp('pm',i,'std','number')}</td><td>${inp('pm',i,'act','number')}</td>
+    <td class="calc">${fmt(sm)}</td><td class="calc">${fmt(am)}</td>
+    <td class="calc" style="color:${e===null?'#5d6b80':e>=1?'#1a7f37':'#cf222e'}">${e===null?'—':fmt(e*100)}</td>
+    <td>${sel('pm',i,'r',['OK','NG','Edit'])}</td><td>${inp('pm',i,'rm')}</td>${del('pm',i)}</tr>`;});
+  $('tb_pm').tBodies[0].innerHTML=h||`<tr><td colspan="13" style="text-align:center;color:#5d6b80;padding:14px">ยังไม่มีรายการ</td></tr>`;
+  // DAILY
+  h='';S.dly.forEach((r,i)=>{const mh=num(r.du)*num(r.men);
+    h+=`<tr><td style="text-align:center">${i+1}</td><td>${sel('dly',i,'ty',['Normal','Special'])}</td>
+    <td>${inp('dly',i,'o')}</td><td>${inp('dly',i,'d')}</td><td>${sel('dly',i,'lv',['A','B','C'])}</td>
+    <td>${inp('dly',i,'who','text','list="dl_tech" placeholder="เลือก/พิมพ์ชื่อช่าง"')}</td>
+    <td>${inp('dly',i,'men','number')}</td><td>${inp('dly',i,'du','number')}</td>
+    <td class="calc">${fmt(mh)}</td><td>${sel('dly',i,'r',['OK','NG'])}</td><td>${inp('dly',i,'rm')}</td>${del('dly',i)}</tr>`;});
+  $('tb_dly').tBodies[0].innerHTML=h||`<tr><td colspan="12" style="text-align:center;color:#5d6b80;padding:14px">ยังไม่มีรายการ</td></tr>`;
+  // FAULT
+  h='';S.flt.forEach((r,i)=>{const rs=dur(r.tf,r.ts),rp=dur(r.ts,r.tt),dw=dur(r.tf,r.tt);
+    h+=`<tr><td style="text-align:center">${i+1}</td><td>${inp('flt',i,'o')}</td><td>${inp('flt',i,'msg')}</td>
+    <td>${inp('flt',i,'pb')}</td><td>${inp('flt',i,'fx')}</td>
+    <td>${inp('flt',i,'tf','time')}</td><td>${inp('flt',i,'ts','time')}</td><td>${inp('flt',i,'tt','time')}</td>
+    <td>${inp('flt',i,'men','number')}</td><td class="calc">${fmt(rs)}</td><td class="calc">${fmt(rp)}</td>
+    <td class="calc" style="color:#cf222e">${fmt(dw)}</td><td class="calc">${rp===null?'—':fmt(rp*num(r.men))}</td>${del('flt',i)}</tr>`;});
+  $('tb_flt').tBodies[0].innerHTML=h||`<tr><td colspan="14" style="text-align:center;color:#5d6b80;padding:14px">ยังไม่มีรายการ</td></tr>`;
+  renderAreas();
+  calc();
+}
+/* ============ METRICS ENGINE ============ */
+function metrics(A){
+  const h=A.hdr;
+  const N=Math.max(0,num(h.m_n)),H=Math.max(0,num(h.m_h));
+  const B=clamp(num(h.m_b),0,H),eta=clamp(num(h.m_e),0,100)/100;
+  const gross=N*H, prod=N*(H-B), net=prod*eta;
+  const sum=(a,f)=>a.reduce((s,r)=>s+f(r),0);
+  const cmStd=sum(A.cm,r=>num(r.std)*num(r.men)), cmAct=sum(A.cm,r=>num(r.act)*num(r.men));
+  const pmStd=sum(A.pm,r=>num(r.std)*num(r.men)), pmAct=sum(A.pm,r=>num(r.act)*num(r.men));
+  const dlMH =sum(A.dly,r=>num(r.du)*num(r.men));
+  const ftMH =sum(A.flt,r=>(dur(r.ts,r.tt)||0)*num(r.men));
+  const down =sum(A.flt,r=>dur(r.tf,r.tt)||0);
+  const resp =sum(A.flt,r=>dur(r.tf,r.ts)||0);
+  const rep  =sum(A.flt,r=>dur(r.ts,r.tt)||0);
+  const nF   =A.flt.filter(r=>r.tf&&r.tt).length;
+  const demand=cmAct+pmAct+dlMH+ftMH;
+  const U=div(demand,net), OLE=div(cmStd+pmStd,cmAct+pmAct);
+  const nReq=(H-B)>0&&eta>0?Math.ceil(demand/((H-B)*eta)):null;
+  const gap=nReq===null?null:nReq-N;
+  const all=[...A.cm,...A.pm,...A.dly];
+  const ok=all.filter(r=>r.r==='OK').length, ng=all.filter(r=>r.r==='NG').length, ed=all.filter(r=>r.r==='Edit').length;
+  const fpy=div(ok,ok+ng+ed);
+  const pmSC=div(A.pm.filter(r=>r.r==='OK').length,num(h.pm_plan));
+  const dlSC=div(A.dly.filter(r=>r.r==='OK').length,num(h.dl_plan));
+  const ppt=num(h.ppt), avail=ppt>0?clamp((ppt-down)/ppt,0,1):null;
+  const MTTR=div(rep,nF), MTTA=div(resp,nF);
+  const pres=A.team.filter(t=>t.st==='มาทำงาน'&&t.nm.trim());
+  const leav=A.team.filter(t=>t.st==='ลา'&&t.nm.trim());
+  const ots=A.team.filter(t=>num(t.ot)>0&&t.nm.trim());
+  const totOT=A.team.reduce((s,t)=>s+num(t.ot),0);
+  const ar=div(pres.length,pres.length+leav.length);
+  const st=U===null?{t:'NO DATA',c:'info'}:U<0.6?{t:'UNDER-UTILISED',c:'info'}:U<=0.85?{t:'NORMAL',c:'ok'}:U<=1?{t:'TIGHT',c:'warn'}:{t:'OVERLOAD',c:'bad'};
+  return {N,H,B,eta,gross,prod,net,cmStd,cmAct,pmStd,pmAct,dlMH,ftMH,down,resp,rep,nF,
+          demand,U,OLE,nReq,gap,fpy,pmSC,dlSC,ppt,avail,MTTR,MTTA,pres,leav,ots,totOT,ar,st};
+}
+/* ============ RENDER CALC ============ */
+function calc(){
+  grabHdr();
+  const M=metrics(S);
+  $('o_gross').value=fmt(M.gross); $('o_prod').value=fmt(M.prod); $('o_net').value=fmt(M.net);
+  $('dl_tech').innerHTML=M.pres.map(t=>`<option value="${esc(t.nm)}">${esc(t.po)}${t.id?' · '+esc(t.id):''}</option>`).join('');
+  $('cnt_p').textContent=M.pres.length; $('cnt_l').textContent=M.leav.length; $('cnt_ot').textContent=M.ots.length;
+  $('list_p').innerHTML=M.pres.length?M.pres.map(t=>`<span class="pchip">${esc(t.nm)}<span class="t">${esc(t.po)}</span></span>`).join(''):'<div class="note">ยังไม่มีรายชื่อ — เพิ่มที่แท็บ Team Roster</div>';
+  $('list_l').innerHTML=M.leav.length?M.leav.map(t=>`<span class="pchip lv">${esc(t.nm)}<span class="t">${esc(t.lv)}</span></span>`).join(''):'<div class="note">ไม่มีคนลาในพื้นที่นี้</div>';
+  $('list_ot').innerHTML=M.ots.length?M.ots.map(t=>`<span class="pchip ot">${esc(t.nm)}<span class="t">+${num(t.ot)} ชม.</span></span>`).join(''):'<div class="note">ไม่มีช่างทำ OT ในพื้นที่นี้</div>';
+  $('nnote').innerHTML=S.team.length?(M.pres.length===M.N?'<span style="color:#1a7f37">N ตรงกับจำนวนคนที่มาทำงาน</span>':`<span style="color:#9a6700">N = ${M.N} แต่มาทำงานจริง ${M.pres.length} คน</span>`):'';
+  const ft=(id,c)=>$(id).innerHTML=c;
+  ft('f_team',`<tr><th colspan="4" style="text-align:right">TOTAL</th><th class="calc">${S.team.filter(t=>t.nm.trim()).length} คน</th><th class="calc">มา ${M.pres.length} / ลา ${M.leav.length}</th><th class="calc">+${M.totOT} ชม.</th><th colspan="2"></th></tr>`);
+  ft('f_cm',`<tr><th colspan="7" style="text-align:right">TOTAL</th><th class="calc">${fmt(M.cmStd)}</th><th class="calc">${fmt(M.cmAct)}</th><th class="calc">${div(M.cmStd,M.cmAct)===null?'—':fmt(div(M.cmStd,M.cmAct)*100)}</th><th colspan="3"></th></tr>`);
+  ft('f_pm',`<tr><th colspan="7" style="text-align:right">TOTAL</th><th class="calc">${fmt(M.pmStd)}</th><th class="calc">${fmt(M.pmAct)}</th><th class="calc">${div(M.pmStd,M.pmAct)===null?'—':fmt(div(M.pmStd,M.pmAct)*100)}</th><th colspan="3"></th></tr>`);
+  ft('f_dly',`<tr><th colspan="8" style="text-align:right">TOTAL MH</th><th class="calc">${fmt(M.dlMH)}</th><th colspan="3"></th></tr>`);
+  ft('f_flt',`<tr><th colspan="9" style="text-align:right">TOTAL</th><th class="calc">${fmt(M.resp)}</th><th class="calc">${fmt(M.rep)}</th><th class="calc">${fmt(M.down)}</th><th class="calc">${fmt(M.ftMH)}</th><th></th></tr>`);
+  const K=(l,v,u,c)=>`<div class="kpi ${c}"><div class="l">${l}</div><div class="v">${v} <span class="u">${u}</span></div></div>`;
+  $('kpis').innerHTML=
+    K('พื้นที่ปัจจุบัน',esc(DB.active),'','info')+
+    K('Capacity Status',M.st.t,'',M.st.c)+
+    K('มาทำงานวันนี้',M.pres.length,'คน','ok')+
+    K('ทำ OT',M.ots.length,'คน','warn')+
+    K('ชั่วโมง OT รวม',M.totOT,'ชม.','warn')+
+    K('Workload / Utilisation',M.U===null?'—':fmt(M.U*100),'%',M.st.c)+
+    K('Demand',fmt(M.demand),'MH','info')+
+    K('Net Available',fmt(M.net),'MH','ok')+
+    K('Balance',fmt(M.net-M.demand),'MH',(M.net-M.demand)<0?'bad':'ok')+
+    K('Manpower Required',M.nReq===null?'—':M.nReq,'คน',M.gap>0?'bad':'ok')+
+    K('Manpower Gap',M.gap===null?'—':(M.gap>0?'+'+M.gap:M.gap),'คน',M.gap>0?'bad':'ok')+
+    K('Labour Efficiency',M.OLE===null?'—':fmt(M.OLE*100),'%',M.OLE===null?'info':M.OLE>=1?'ok':'warn')+
+    K('First-Pass Yield',M.fpy===null?'—':fmt(M.fpy*100),'%',M.fpy===null?'info':M.fpy>=0.95?'ok':'warn')+
+    K('PM Compliance',M.pmSC===null?'—':fmt(M.pmSC*100),'%',M.pmSC>=0.9?'ok':'warn')+
+    K('Daily Compliance',M.dlSC===null?'—':fmt(M.dlSC*100),'%',M.dlSC>=0.9?'ok':'warn')+
+    K('MTTR',M.MTTR===null?'—':fmt(M.MTTR),'hr','info')+
+    K('MTTA',M.MTTA===null?'—':fmt(M.MTTA),'hr','info')+
+    K('Area Availability',M.avail===null?'—':fmt(M.avail*100),'%',M.avail===null?'info':M.avail>=0.95?'ok':'bad');
+  $('arows').innerHTML=DB.areas.map(a=>{const m=metrics(DB.d[a]);
+    const c=m.st.c==='bad'?'#cf222e':m.st.c==='warn'?'#9a6700':m.st.c==='ok'?'#1a7f37':'#0969da';
+    return `<tr class="clk ${a===DB.active?'cur':''}" onclick="switchArea('${esc(a).replace(/'/g,"\\'")}')">
+      <td><b>${esc(a)}</b></td><td>${esc(DB.d[a].hdr.h_sup)||'—'}</td>
+      <td class="calc" style="color:#1a7f37">${m.pres.length}</td>
+      <td class="calc" style="color:${m.leav.length?'#cf222e':'#5d6b80'}">${m.leav.length}</td>
+      <td class="calc" style="color:#9a6700">${m.totOT>0?'+'+m.totOT+'ชม.':'-'}</td>
+      <td class="calc">${m.N}</td><td class="calc">${fmt(m.net)}</td><td class="calc">${fmt(m.demand)}</td>
+      <td class="calc" style="color:${(m.net-m.demand)<0?'#cf222e':'#1a7f37'}">${fmt(m.net-m.demand)}</td>
+      <td class="calc" style="color:${c}">${m.U===null?'—':fmt(m.U*100)}</td>
+      <td class="calc" style="color:${m.gap>0?'#cf222e':'#1a7f37'}">${m.gap===null?'—':(m.gap>0?'+'+m.gap:m.gap)}</td>
+      <td style="text-align:center;color:${c};font-weight:700">${m.st.t}</td></tr>`;}).join('');
+  const pct=M.U===null?0:M.U*100, col=pct>100?'#cf222e':pct>85?'#bf8700':pct>=60?'#1a7f37':'#1f6feb';
+  $('ub').style.width=Math.min(100,pct)+'%'; $('ub').style.background=col;
+  $('ut').textContent=(M.U===null?'—':fmt(pct)+' %')+'  ('+fmt(M.demand)+' / '+fmt(M.net)+' MH)';
+  $('unote').innerHTML=`เกณฑ์: <code>&lt;60% UNDER</code> <code>60–85% NORMAL</code> <code>85–100% TIGHT</code> <code>&gt;100% OVERLOAD</code>`;
+  const parts=[['CM',M.cmAct,'#cf222e'],['PM',M.pmAct,'#bf8700'],['Daily',M.dlMH,'#1f6feb'],['Fault',M.ftMH,'#8250df']];
+  $('stk').innerHTML=M.demand>0?parts.map(([n,v,c])=>v>0?`<i style="width:${v/M.demand*100}%;background:${c}">${v/M.demand>0.07?fmt(v,1):''}</i>`:'').join(''):'<i style="width:100%;background:#d6dde8"></i>';
+  $('bal').innerHTML=[
+    ['Gross Capacity  N × H',M.gross],['− Break / Allowance  N × B',-(M.N*M.B)],
+    ['= Productive Capacity',M.prod],[`× Availability Factor η = ${fmt(M.eta*100,0)} %`,M.net-M.prod],
+    ['<b>= NET AVAILABLE</b>',M.net],['CM Actual',-M.cmAct],['PM Actual',-M.pmAct],
+    ['Daily Inspection',-M.dlMH],['Fault Repair',-M.ftMH],
+    ['<b>= BALANCE (+ เหลือ / − ขาด)</b>',M.net-M.demand]
+  ].map(([l,v],i)=>`<tr${i>=4?' style="border-top:1px solid #d6dde8"':''}><td>${l}</td>
+    <td class="calc" style="color:${v<0?'#cf222e':'#1a7f37'};width:110px">${v>0&&i>0?'+':''}${fmt(v)}</td></tr>`).join('');
+  validate(M);
+}
+function syncN(){$('m_n').value=S.team.filter(t=>t.st==='มาทำงาน'&&t.nm.trim()).length;calc();}
+/* ============ VALIDATION ============ */
+function validate(d){
+  const m=[];const push=(c,t)=>m.push(`<div class="msg ${c}">${t}</div>`);
+  const AR=`<b>[${esc(DB.active)}]</b> `;
+  if(d.H<=0)push('e',AR+'<b>ERROR:</b> Shift Length H ≤ 0');
+  if(d.B>=d.H&&d.H>0)push('e',AR+'<b>ERROR:</b> Break B ≥ H');
+  if(d.eta<=0)push('e',AR+'<b>ERROR:</b> Availability Factor η = 0');
+  if(d.totOT>0)push('g',AR+`<b>INFO:</b> มีช่างทำ OT รวม <b>${d.totOT} ชม.</b> ในพื้นที่นี้`);
+  if(d.U!==null&&d.U>1)push('e',AR+`<b>OVERLOAD:</b> ต้องการ ${fmt(d.demand)} MH แต่มี ${fmt(d.net)} MH → ขาด <b>${fmt(d.demand-d.net)} MH</b>`);
+  if(!m.length)push('g',AR+'<b>PASS:</b> ตรวจสอบครบทุกเงื่อนไข ไม่พบความผิดปกติเชิงตัวเลขในพื้นที่นี้');
+  $('vout').innerHTML=m.join('');
+}
+/* ============ HISTORY ARCHIVE (ย้อนหลังรายวัน + ข้ามเครื่อง) ============ */
+const HKEY='mt3_hist_v5';
+function histAll(){try{return JSON.parse(localStorage.getItem(HKEY)||'{}');}catch(e){return {};}}
+function histSet(o){try{localStorage.setItem(HKEY,JSON.stringify(o));}catch(e){alert('พื้นที่จัดเก็บเต็ม — กรุณาส่งออกแล้วล้างประวัติเก่า');}}
+function snapTotals(db){
+  let p=0,l=0,ot=0,net=0,dem=0;
+  (db.areas||[]).forEach(a=>{const m=metrics(db.d[a]);p+=m.pres.length;l+=m.leav.length;ot+=m.totOT;net+=m.net;dem+=m.demand;});
+  return {p,l,ot,net,dem,u:div(dem,net)};
+}
+function saveSnap(silent){
+  const db=pack();
+  const dt=db.g.h_date||'', sh=db.g.h_shift||'Day';
+  if(!dt){alert('กรุณาระบุวันที่ก่อนบันทึกเข้าประวัติ');return;}
+  const key=dt+'|'+sh, H=histAll();
+  if(H[key]&&silent!==true&&!confirm('มีบันทึกของ '+dt+' กะ '+sh+' อยู่แล้ว — ต้องการเขียนทับหรือไม่?'))return;
+  H[key]={date:dt,shift:sh,savedAt:new Date().toLocaleString('th-TH'),db:cp(db)};
+  histSet(H); renderHist();
+  if(AUTO_CLOUD&&window.FB&&window.FB.ready)cloudPush(true);
+  if(silent!==true)alert('บันทึกเข้าประวัติเรียบร้อย: '+dt+' กะ '+sh);
+}
+function renderHist(){
+  const H=histAll(), f=$('hs_date')?$('hs_date').value:'';
+  const keys=Object.keys(H).filter(k=>!f||H[k].date===f).sort().reverse();
+  $('hrows').innerHTML=keys.length?keys.map(k=>{
+    const r=H[k], t=snapTotals(r.db);
+    const c=t.u===null?'#0969da':t.u>1?'#cf222e':t.u>0.85?'#9a6700':'#1a7f37';
+    return `<tr><td><b>${esc(r.date)}</b></td><td style="text-align:center">${esc(r.shift)}</td>
+      <td class="calc">${(r.db.areas||[]).length}</td>
+      <td class="calc" style="color:#1a7f37">${t.p}</td>
+      <td class="calc" style="color:${t.l?'#cf222e':'#5d6b80'}">${t.l}</td>
+      <td class="calc" style="color:#9a6700">${t.ot}</td>
+      <td class="calc">${fmt(t.net)}</td><td class="calc">${fmt(t.dem)}</td>
+      <td class="calc" style="color:${c}">${t.u===null?'—':fmt(t.u*100)}</td>
+      <td style="font-size:12.5px;color:#5d6b80">${esc(r.savedAt)}${r.cloud?'<span class="ctag cloud">cloud</span>':''}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="p" style="padding:3px 9px" onclick="loadSnap('${esc(k)}')">เปิดดู</button>
+        <button style="padding:3px 9px" onclick="cloudPushKey('${esc(k)}')">☁</button>
+        <button style="padding:3px 9px" onclick="expSnap('${esc(k)}')">⬇</button>
+        <button class="d" style="padding:3px 9px" onclick="delSnap('${esc(k)}')">✕</button>
+      </td></tr>`;}).join(''):
+    `<tr><td colspan="11" style="text-align:center;color:#5d6b80;padding:16px">ยังไม่มีประวัติที่บันทึกไว้${f?' สำหรับวันที่ '+esc(f):''} — กดปุ่ม "บันทึกวันนี้เข้าประวัติ"</td></tr>`;
+  $('hnote').innerHTML=`มีทั้งหมด <b>${Object.keys(H).length}</b> รายการในคลังประวัติ · 1 รายการ = 1 วัน × 1 กะ (เก็บข้อมูลครบทุกพื้นที่)`;
+}
+function clearFilter(){$('hs_date').value='';renderHist();}
+function loadSnap(k){
+  const H=histAll(), r=H[k]; if(!r)return alert('ไม่พบรายการนี้');
+  if(!confirm('เปิดข้อมูลของ '+r.date+' กะ '+r.shift+' ? (ข้อมูลที่กำลังแก้อยู่และยังไม่บันทึกจะถูกแทนที่)'))return;
+  adoptDB(cp(r.db)); goTab('dash'); window.scrollTo({top:0,behavior:'smooth'});
+}
+function delSnap(k){const H=histAll();if(!H[k])return;if(!confirm('ลบรายการ '+H[k].date+' กะ '+H[k].shift+' ?'))return;delete H[k];histSet(H);renderHist();}
+function expSnap(k){const H=histAll();if(!H[k])return;dl(`MT3_${H[k].date}_${H[k].shift}.json`,JSON.stringify(H[k],null,2),'application/json');}
+function expArchive(){
+  const H=histAll();
+  if(!Object.keys(H).length)return alert('ยังไม่มีประวัติให้ส่งออก');
+  dl('MT3_ARCHIVE.json',JSON.stringify({type:'MT3_ARCHIVE',ver:5,exportedAt:new Date().toISOString(),data:H},null,2),'application/json');
+}
+function impArchive(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const o=JSON.parse(r.result);
+      const inc=o&&o.type==='MT3_ARCHIVE'?o.data:(o&&o.date&&o.db?{[o.date+'|'+o.shift]:o}:null);
+      if(!inc)return alert('ไฟล์ไม่ถูกต้อง — ต้องเป็นไฟล์คลังประวัติหรือไฟล์รายวันที่ส่งออกจากระบบนี้');
+      const H=histAll(); let add=0,ovr=0;
+      Object.keys(inc).forEach(k=>{if(H[k])ovr++;else add++;H[k]=inc[k];});
+      histSet(H); renderHist();
+      alert('นำเข้าสำเร็จ — เพิ่มใหม่ '+add+' รายการ, อัปเดตทับ '+ovr+' รายการ');
+    }catch(err){alert('อ่านไฟล์ไม่สำเร็จ: '+err.message);}
+    e.target.value='';
+  };
+  r.readAsText(f);
+}
+function clearHist(){if(confirm('ล้างประวัติทั้งหมดในเครื่องนี้? (แนะนำให้ส่งออกเก็บไว้ก่อน)')){localStorage.removeItem(HKEY);renderHist();}}
+function shareLink(){
+  const s=b64enc(JSON.stringify(pack()));
+  const url=location.origin+location.pathname+'#d='+s;
+  if(url.length>60000)return alert('ข้อมูลใหญ่เกินกว่าจะใส่ในลิงก์ — กรุณาใช้วิธีส่งออกไฟล์คลังประวัติแทน');
+  const done=()=>alert('คัดลอกลิงก์แล้ว ('+url.length+' ตัวอักษร)\nวางส่งทาง LINE/อีเมลได้เลย\n\nหมายเหตุ: ปลายทางต้องเปิดไฟล์ระบบจากที่อยู่เดียวกัน (เช่น เว็บโฮสต์) จึงจะเปิดลิงก์ได้');
+  if(navigator.clipboard&&location.protocol!=='file:')navigator.clipboard.writeText(url).then(done,()=>prompt('คัดลอกลิงก์นี้:',url));
+  else prompt('คัดลอกลิงก์นี้:',url);
+}
+function adoptDB(o){
+  if(!o||!o.areas||!o.areas.length)return alert('ข้อมูลไม่สมบูรณ์');
+  DB=o; if(!DB.d[DB.active])DB.active=DB.areas[0];
+  DB.areas.forEach(a=>{const A=DB.d[a]||(DB.d[a]=newArea(false));
+    ['cm','pm','dly','flt','team'].forEach(k=>{if(!A[k])A[k]=[];});
+    if(!A.hdr)A.hdr=newArea(false).hdr;});
+  S=DB.d[DB.active]; GF.forEach(k=>{if(DB.g&&DB.g[k]!==undefined)$(k).value=DB.g[k];});
+  putHdr(); render();
+}
+function goTab(t){
+  document.querySelectorAll('.tabs div').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  const e=$('t_'+t); if(e)e.classList.add('on');
+}
+/* ============ CLOUD SYNC CONTROLLER (FIREBASE) ============ */
+let AUTO_CLOUD=(localStorage.getItem('mt3_auto_cloud')==='1');
+function cStat(txt,cls){
+  const d=$('cdot'),s=$('cloud_st'),b=$('cloud_badge');
+  if(s)s.textContent=txt;
+  if(d)d.className='cdot'+(cls?' '+cls:'');
+  if(b){b.className='ctag '+(cls==='on'?'cloud':'local');b.innerHTML='<span class="cdot'+(cls?' '+cls:'')+'"></span>'+(cls==='on'?'Cloud':'Local');}
+}
+function toggleAuto(){
+  AUTO_CLOUD=$('auto_cloud').checked;
+  localStorage.setItem('mt3_auto_cloud',AUTO_CLOUD?'1':'0');
+  cStat(AUTO_CLOUD?'เชื่อมต่อแล้ว · บันทึกขึ้นคลาวด์อัตโนมัติ':'เชื่อมต่อแล้ว · บันทึกขึ้นคลาวด์ด้วยตนเอง','on');
+}
+function fbReady(){
+  if(!window.FB||!window.FB.ready){alert('ยังไม่ได้เชื่อมต่อ Firebase — กรุณาตรวจสอบค่า firebaseConfig ท้ายไฟล์ และต้องเปิดผ่าน http/https (เช่น GitHub Pages) ไม่ใช่ file://');return false;}
+  return true;
+}
+async function cloudPushKey(k,silent){
+  if(!fbReady())return;
+  const H=histAll(), r=H[k]; if(!r)return;
+  try{
+    cStat('กำลังอัปโหลด...','wk');
+    await window.FB.put(k,r);
+    H[k].cloud=true; histSet(H); renderHist();
+    cStat('เชื่อมต่อแล้ว · อัปโหลดสำเร็จ '+new Date().toLocaleTimeString('th-TH'),'on');
+    if(!silent)alert('อัปโหลดขึ้นคลาวด์สำเร็จ: '+r.date+' กะ '+r.shift);
+  }catch(e){cStat('อัปโหลดล้มเหลว: '+e.message,'er');if(!silent)alert('อัปโหลดล้มเหลว: '+e.message);}
+}
+async function cloudPush(silent){
+  const db=pack(), k=(db.g.h_date||'')+'|'+(db.g.h_shift||'Day');
+  if(!db.g.h_date)return alert('กรุณาระบุวันที่ก่อนอัปโหลด');
+  const H=histAll();
+  if(!H[k]){H[k]={date:db.g.h_date,shift:db.g.h_shift,savedAt:new Date().toLocaleString('th-TH'),db:cp(db)};histSet(H);}
+  await cloudPushKey(k,silent);
+}
+async function cloudPushAll(){
+  if(!fbReady())return;
+  const H=histAll(), keys=Object.keys(H);
+  if(!keys.length)return alert('ยังไม่มีประวัติให้อัปโหลด');
+  if(!confirm('อัปโหลดประวัติทั้งหมด '+keys.length+' รายการขึ้นคลาวด์?'))return;
+  let ok=0,er=0;
+  cStat('กำลังอัปโหลด '+keys.length+' รายการ...','wk');
+  for(const k of keys){
+    try{await window.FB.put(k,H[k]);H[k].cloud=true;ok++;}catch(e){er++;}
+  }
+  histSet(H); renderHist();
+  cStat('เชื่อมต่อแล้ว · อัปโหลดสำเร็จ '+ok+' รายการ','on');
+  alert('อัปโหลดสำเร็จ '+ok+' รายการ'+(er?' · ล้มเหลว '+er+' รายการ':''));
+}
+async function cloudPull(){
+  if(!fbReady())return;
+  try{
+    cStat('กำลังดึงข้อมูล...','wk');
+    const inc=await window.FB.getAll();
+    const keys=Object.keys(inc);
+    if(!keys.length){cStat('เชื่อมต่อแล้ว · ยังไม่มีข้อมูลบนคลาวด์','on');return alert('ยังไม่มีข้อมูลบนคลาวด์');}
+    const H=histAll(); let add=0,upd=0;
+    keys.forEach(k=>{if(H[k])upd++;else add++;H[k]=inc[k];H[k].cloud=true;});
+    histSet(H); renderHist();
+    cStat('เชื่อมต่อแล้ว · ดึงข้อมูลสำเร็จ '+keys.length+' รายการ','on');
+    alert('ดึงข้อมูลจากคลาวด์สำเร็จ — เพิ่มใหม่ '+add+' รายการ, อัปเดต '+upd+' รายการ');
+  }catch(e){cStat('ดึงข้อมูลล้มเหลว: '+e.message,'er');alert('ดึงข้อมูลล้มเหลว: '+e.message);}
+}
+/* ============ EVENTS ============ */
+function addRow(k){S[k].push(cp(BLANK[k]));render();}
+function rm(k,i){S[k].splice(i,1);render();}
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='hs_date'||t.id==='auto_cloud')return;
+  if(t.dataset.k){S[t.dataset.k][+t.dataset.i][t.dataset.f]=t.value;
+    if(['men','std','act','du','tf','ts','tt','ot'].includes(t.dataset.f))render();else calc();}
+  else if(t.id!=='newarea')calc();
+});
+document.addEventListener('change',e=>{if(e.target.dataset.k){S[e.target.dataset.k][+e.target.dataset.i][e.target.dataset.f]=e.target.value;render();}});
+document.querySelectorAll('.tabs div').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs div').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$('t_'+b.dataset.t).classList.add('on');
+  if(b.dataset.t==='hist')renderHist();});
+/* ============ PERSISTENCE / EXPORT ============ */
+function pack(){grabHdr();GF.forEach(k=>DB.g[k]=$(k).value);return DB;}
+function save(){localStorage.setItem('mms_v5',JSON.stringify(pack()));saveSnap(true);alert('บันทึกข้อมูลทุกพื้นที่ลงเครื่อง และเก็บเข้าประวัติย้อนหลังเรียบร้อย');}
+function load(){const s=localStorage.getItem('mms_v5');if(!s)return alert('ไม่พบข้อมูลที่บันทึกไว้');
+  const o=JSON.parse(s);
+  if(!o.areas||!o.areas.length){alert('ข้อมูลไม่สมบูรณ์');return;}
+  DB=o; if(!DB.d[DB.active])DB.active=DB.areas[0];
+  DB.areas.forEach(a=>{const A=DB.d[a]||(DB.d[a]=newArea(false));
+    ['cm','pm','dly','flt','team'].forEach(k=>{if(!A[k])A[k]=[];});
+    if(!A.hdr)A.hdr=newArea(false).hdr;});
+  S=DB.d[DB.active]; GF.forEach(k=>{if(DB.g&&DB.g[k]!==undefined)$(k).value=DB.g[k];});
+  putHdr(); render();}
+function resetAll(){if(confirm('ล้างข้อมูลทุกพื้นที่ทั้งหมด?')){
+  DB={areas:[...DEF_AREAS],active:DEF_AREAS[0],d:{},g:{}};
+  DEF_AREAS.forEach(a=>DB.d[a]=newArea(true));
+  S=DB.d[DB.active];putHdr();render();}}
+function dl(name,txt,type){const b=new Blob(["\uFEFF"+txt],{type});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;a.click();}
+function expJSON(){dl(`MT3_${$('h_date').value||'record'}_ALL-AREAS.json`,JSON.stringify(pack(),null,2),'application/json');}
+function expCSV(){
+  pack();
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;const L=[];
+  L.push(['MT3 MAINTENANCE MANPOWER & WORKLOAD REPORT — AREA SEGREGATED'].map(q));
+  L.push(['Date',$('h_date').value,'Shift',$('h_shift').value].map(q));
+  L.push([]);
+  L.push(['AREA SUMMARY'].map(q));
+  L.push(['Area','Supervisor','Present','Leave','OT (hrs)','N','H','B','eta%','Net MH','Demand','Balance','Util%','Gap','Status'].map(q));
+  DB.areas.forEach(a=>{const m=metrics(DB.d[a]);
+    L.push([a,DB.d[a].hdr.h_sup,m.pres.length,m.leav.length,m.totOT,m.N,m.H,m.B,fmt(m.eta*100,0),fmt(m.net),fmt(m.demand),fmt(m.net-m.demand),m.U===null?'':fmt(m.U*100),m.gap===null?'':m.gap,m.st.t].map(q));});
+  dl(`MT3_${$('h_date').value||'record'}_ALL-AREAS.csv`,L.map(r=>r.join(',')).join('\n'),'text/csv;charset=utf-8;');
+}
+/* ============ INIT APP ============ */
+function initApp(){
+  $('h_date').value=new Date().toISOString().slice(0,10);
+  $('h_shift').value='Night';
+  putHdr();
+  render();
+  renderHist();
+  $('auto_cloud').checked=AUTO_CLOUD;
+  if(window.FB&&window.FB.ready)cStat('เชื่อมต่อแล้ว'+(AUTO_CLOUD?' · บันทึกขึ้นคลาวด์อัตโนมัติ':''),'on');
+  if(PENDING_SHARE){
+    adoptDB(PENDING_SHARE); PENDING_SHARE=null;
+    history.replaceState(null,'',location.pathname);
+    alert('เปิดข้อมูลที่แชร์มาจากลิงก์เรียบร้อย — กดปุ่ม "บันทึกวันนี้เข้าประวัติ" เพื่อเก็บไว้ในเครื่องนี้');
+  }
+}
+</script>
+<!-- ================================================================
+     FIREBASE FIRESTORE CONNECTOR — mt3-system
+     ================================================================ -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, getDocs }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+/* ====== ค่าจาก Firebase Console — โปรเจกต์ mt3-system ====== */
+const firebaseConfig = {
+  apiKey:            "AIzaSyBXcV7uvyplWqTedIHokft_9j7-LaOpTI",
+  authDomain:        "mt3-system.firebaseapp.com",
+  projectId:         "mt3-system",
+  storageBucket:     "mt3-system.firebasestorage.app",
+  messagingSenderId: "699998680621",
+  appId:             "1:699998680621:web:939b4f1961687840d06aa4",
+  measurementId:     "G-YZT24M905V"
+};
+const COL = 'mt3_history';   /* ชื่อคอลเล็กชันใน Firestore */
+/* ============================================================== */
+
+window.FB = { ready:false };
+try{
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const auth= getAuth(app);
+  await signInAnonymously(auth);
+  window.FB = {
+    ready:true,
+    async put(key, rec){
+      await setDoc(doc(db, COL, key.replace(/\//g,'_')), {
+        date   : rec.date,
+        shift  : rec.shift,
+        savedAt: rec.savedAt,
+        updated: new Date().toISOString(),
+        payload: JSON.stringify(rec.db)
+      });
+    },
+    async getAll(){
+      const snap = await getDocs(collection(db, COL));
+      const out = {};
+      snap.forEach(d=>{
+        const v = d.data();
+        try{
+          out[v.date+'|'+v.shift] = {
+            date:v.date, shift:v.shift, savedAt:v.savedAt,
+            db: JSON.parse(v.payload)
+          };
+        }catch(e){}
+      });
+      return out;
+    }
+  };
+  if(typeof cStat==='function') cStat('เชื่อมต่อ Firebase สำเร็จ','on');
+}catch(e){
+  window.FB = { ready:false, err:e.message };
+  if(typeof cStat==='function') cStat('ยังไม่ได้เชื่อมต่อ Firebase ('+e.message+') — ใช้งานโหมดออฟไลน์ได้ตามปกติ','er');
+}
+</script>
+</body>
+</html>
